@@ -1,0 +1,166 @@
+#include <iostream>
+#include <unordered_map>
+#include <vector>
+#include <stdexcept>
+
+// 假设 ICHECK 宏定义如下（可以根据实际需求调整）
+#define ICHECK(condition) \
+  if (!(condition)) {     \
+    throw std::runtime_error("Check failed: " #condition); \
+  }
+
+template <typename Tobj, typename Hash = std::hash<Tobj>,
+          typename TobjEqual = std::equal_to<Tobj>>
+class IndexedVector {
+public:
+  using iterator = typename std::vector<Tobj>::iterator;
+  using const_iterator = typename std::vector<Tobj>::const_iterator;
+
+  std::unordered_map<Tobj, int, Hash, TobjEqual> index_;
+  std::vector<Tobj> vec_;
+
+  // 默认构造函数
+  IndexedVector() = default;
+
+  // 构造函数从已有向量初始化
+  explicit IndexedVector(const std::vector<Tobj>& vec) : vec_(vec) {
+    for (size_t i = 0; i < vec.size(); ++i) {
+      ICHECK(index_.count(vec[i]) == 0) << "Duplicate element found during initialization.";
+      index_[vec[i]] = static_cast<int>(i);
+    }
+  }
+
+  // 拷贝构造函数
+  IndexedVector(const IndexedVector& other) : vec_(other.vec_), index_(other.index_) {}
+
+  // 移动构造函数
+  IndexedVector(IndexedVector&& other) noexcept
+      : vec_(std::move(other.vec_)), index_(std::move(other.index_)) {}
+
+  // 拷贝赋值操作符
+  IndexedVector& operator=(const IndexedVector& other) {
+    if (this != &other) {
+      vec_ = other.vec_;
+      index_ = other.index_;
+    }
+    return *this;
+  }
+
+  // 移动赋值操作符
+  IndexedVector& operator=(IndexedVector&& other) noexcept {
+    if (this != &other) {
+      vec_ = std::move(other.vec_);
+      index_ = std::move(other.index_);
+    }
+    return *this;
+  }
+
+  // 添加新元素
+  void push_back(const Tobj& expr) {
+    ICHECK(index_.count(expr) == 0) << "Element already exists.";
+    index_[expr] = static_cast<int>(vec_.size());
+    vec_.push_back(expr);
+  }
+
+  // 获取指定位置的元素
+  const Tobj& at(std::size_t pos) const {
+    return vec_.at(pos);
+  }
+
+  // 下标操作符
+  Tobj& operator[](std::size_t pos) {
+    return vec_[pos];
+  }
+
+  const Tobj& operator[](std::size_t pos) const {
+    return vec_[pos];
+  }
+
+  // 获取原始向量
+  std::vector<Tobj> GetRawVec() const {
+    return vec_;
+  }
+
+  // 获取元素的索引
+  int GetIndex(const Tobj& e) const {
+    auto it = index_.find(e);
+    ICHECK(it != index_.end()) << "Element not found.";
+    return it->second;
+  }
+
+  // 返回指向起始位置的迭代器
+  iterator begin() {
+    return vec_.begin();
+  }
+
+  // 返回指向结束位置的迭代器
+  iterator end() {
+    return vec_.end();
+  }
+
+  // 返回指向起始位置的常量迭代器
+  const_iterator begin() const {
+    return vec_.begin();
+  }
+
+  // 返回指向结束位置的常量迭代器
+  const_iterator end() const {
+    return vec_.end();
+  }
+
+  // 返回容器中元素的数量
+  std::size_t size() const {
+    return vec_.size();
+  }
+
+  // 判断容器是否为空
+  bool empty() const {
+    return vec_.empty();
+  }
+
+  // 清空容器
+  void clear() {
+    vec_.clear();
+    index_.clear();
+  }
+
+  // 预留空间
+  void reserve(std::size_t new_capacity) {
+    vec_.reserve(new_capacity);
+  }
+
+  // 删除指定元素（仅支持通过元素值删除）
+  void erase(const Tobj& elem) {
+    auto it = index_.find(elem);
+    ICHECK(it != index_.end()) << "Element not found.";
+    std::size_t pos = static_cast<std::size_t>(it->second);
+
+    // 更新索引
+    for (size_t i = pos + 1; i < vec_.size(); ++i) {
+      index_[vec_[i]] = static_cast<int>(i - 1);
+    }
+
+    // 删除元素
+    vec_.erase(vec_.begin() + pos);
+    index_.erase(elem);
+  }
+
+  // 获取最后一个元素
+  const Tobj& back() const {
+    return vec_.back();
+  }
+
+  // 获取第一个元素
+  const Tobj& front() const {
+    return vec_.front();
+  }
+
+  // 返回容器的容量
+  std::size_t capacity() const {
+    return vec_.capacity();
+  }
+
+  // 析构函数
+  ~IndexedVector() = default;
+};
+ 
