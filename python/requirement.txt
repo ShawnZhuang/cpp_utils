@@ -1,0 +1,9 @@
+scikit-image 
+matplotlib
+numpy
+requests 
+tqdm
+torch
+PyWavelets
+scipy
+opencv-python
