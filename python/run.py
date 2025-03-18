@@ -74,7 +74,7 @@ def process():
     # alpha=net.shrink(tmp)
     # v=torch.zeros_like(alpha)    
     # im,v,alpha=net(signal,im,0,0)
-    print(alpha.size(), v.size())
+    # print(alpha.size(), v.size())
     for i in range(10):
         im=net(signal,im)
         print("im",mesage_range(im))
@@ -86,7 +86,7 @@ def process():
     optimizer = torch.optim.Adam(net.parameters(), lr=1e-3)
     for epoch in range(3):
         optimizer.zero_grad()
-        im, v, alpha = net(signal, im, v, alpha)
+        im = net(signal, im)
         loss = F.mse_loss(signal, net.sample(im.abs()))
         loss.backward()
         optimizer.step()
