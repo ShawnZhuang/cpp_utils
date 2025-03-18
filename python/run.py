@@ -26,6 +26,10 @@ def sample_process():
     s = s.numpy().astype(np.uint8)
     imsave('sample.jpg', s)
 
+def mesage_range(t: torch.Tensor):
+    t_amp=t.abs()
+    return "({},{})".format(t_amp.min(), t_amp.max())
+
 
 class SUnit(nn.Module):
     def __init__(self,lamda, beta):
@@ -38,38 +42,64 @@ class SUnit(nn.Module):
         self.idwt=cop.IDWT()
         self.shrink=cop.Shrink(1/beta)    
         
-    def forward(self, s,image, v, alpha):
+    def forward(self, s, image):
+        # print(mesage_range(image), mesage_range(v), mesage_range(alpha))
+        dwt_x=self.dwt(image)
+        new_alpha=self.shrink(dwt_x)
+        new_v= dwt_x-new_alpha
         coeff= self.lamda/self.beta
-        phi_im=self.dwt(image)+v                
-        new_alpha=self.shrink(phi_im)
-        new_v= phi_im-alpha
+        # phi_im=self.dwt(image)+v
+        # print(mesage_range(phi_im))
         idwtx=self.idwt(new_alpha-new_v)
         y1=torch.fft.fft2(idwtx)
         y2= coeff*self.sample_t(s)
-        print( image.size(), idwtx.size(),y1.size(), y2.size())
+        # print( image.size(), idwtx.size(),y1.size(), y2.size())
         y=y1+y2        
         y=y+coeff*self.sample_t(self.sample(y))
-        return torch.fft.ifft2(y), new_v, new_alpha
+        return torch.fft.ifft2(y)
 
 def process():
     signal = imread("sample.jpg")
     signal = torch.Tensor(signal).float().unsqueeze(0)
     signal=signal.permute(0,3,1,2)
+    signal= signal.to(torch.float32)/255
+    print("signal: ", mesage_range(signal))
     print(signal.size())
     net= SUnit(0.5,0.5)
     
     im=net.sample_t(signal)
+    print("im0",mesage_range(im))
     tmp=net.dwt(im)
-    print(tmp.size())
-    alpha=net.shrink(tmp)
-    v=torch.zeros_like(alpha)    
+    print("tmp",mesage_range(tmp))
+    # alpha=net.shrink(tmp)
+    # v=torch.zeros_like(alpha)    
     # im,v,alpha=net(signal,im,0,0)
     print(alpha.size(), v.size())
-    for i in range(1):
-        im,v,alpha=net(signal,im,v,alpha)        
-    im=im.permute(0,2,3,1)
-    # TODO: to be training
-    imsave('reconstructed.jpg', im.detach().numpy().astype(np.uint8)[0])
+    for i in range(10):
+        im=net(signal,im)
+        print("im",mesage_range(im))
+    # diff=signal-net.sample(im)
+    # print("diff",mesage_range(diff))
+    # print(signal.dtype, im.dtype)
+    loss= F.mse_loss(signal,net.sample(im.abs()))
+    print("loss",loss)
+    optimizer = torch.optim.Adam(net.parameters(), lr=1e-3)
+    for epoch in range(3):
+        optimizer.zero_grad()
+        im, v, alpha = net(signal, im, v, alpha)
+        loss = F.mse_loss(signal, net.sample(im.abs()))
+        loss.backward()
+        optimizer.step()
+        print(f"Epoch {epoch+1}, Loss: {loss.item()}")
+        
+    # im=im.permute(0,2,3,1).abs()    
+    # min_im=im.min()
+    # max_im=im.max()
+    # im=(im-min_im)/(max_im-min_im)*255
+    # print("im",mesage_range(im))
+    # im=im.detach().numpy().astype(np.uint8)
+    # # TODO: to be training
+    # imsave('reconstructed.jpg', im)
     
 
 def test_sample():    

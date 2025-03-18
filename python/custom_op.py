@@ -48,10 +48,10 @@ class Sample(torch.nn.Module):
         self.lshape=(sm,m)
         self.rshape=(n,sn)
         self.cshape=(channel_in,channel_out)
-        # print(self.lshape,self.rshape,self.cshape)
-        self.L=torch.nn.Parameter(torch.randn(self.lshape))
-        self.R=torch.nn.Parameter(torch.randn(self.rshape))
-        self.C=torch.nn.Parameter(torch.randn(self.cshape))        
+        # print(self.lshape,self.rshape,self.cshape)        
+        self.L=torch.nn.Parameter(torch.randn(self.lshape)*0.1)
+        self.R=torch.nn.Parameter(torch.randn(self.rshape)*0.1)
+        self.C=torch.nn.Parameter(torch.randn(self.cshape)*0.1)
 
 
     def forward(self, x:torch.Tensor):
@@ -78,18 +78,18 @@ class Sample(torch.nn.Module):
         assert(input_size[-3] == self.cshape[1]) # CO
         assert(input_size[-2] == self.lshape[0]) # Sm
         assert(input_size[-1] == self.rshape[1]) # Sn
-        print( inspect.currentframe().f_lineno, x.size())
+        # print( inspect.currentframe().f_lineno, x.size())
         x=x.permute(0,2,3,1) # [Batch,Sm,Sn,CO]
-        print( inspect.currentframe().f_lineno, x.size())
+        # print( inspect.currentframe().f_lineno, x.size())
         x=torch.matmul(x,self.C.t().to(x.dtype)) # [Batch,Sm,Sn,CO]@[CI,CO]^T -> [Batch,Sm,Sn,CI]
-        print( inspect.currentframe().f_lineno, x.size())
+        # print( inspect.currentframe().f_lineno, x.size())
         x=x.permute(0,3,1,2) # [Batch,CI,Sm,Sn]
-        print( inspect.currentframe().f_lineno, x.size())
+        # print( inspect.currentframe().f_lineno, x.size())
         x=torch.matmul(x,self.R.t().to(x.dtype)) # [Batch,CI,Sm,Sn]*[N,SN]^T -> [Batch,CI,Sm,N]
-        print( inspect.currentframe().f_lineno, x.size())
+        # print( inspect.currentframe().f_lineno, x.size())
         x=torch.matmul(self.L.t().to(x.dtype),x) # [sm,M]^T * [Batch,CI,Sm,N] -> [Batch,CI,M,N]
-        print( inspect.currentframe().f_lineno, x.size())
-        print( inspect.currentframe().f_lineno, x.size())
+        # print( inspect.currentframe().f_lineno, x.size())
+        # print( inspect.currentframe().f_lineno, x.size())
         return x
 
 class SampleTranpose(torch.nn.Module):
