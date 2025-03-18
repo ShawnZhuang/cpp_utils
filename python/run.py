@@ -84,7 +84,7 @@ def process():
     loss= F.mse_loss(signal,net.sample(im.abs()))
     print("loss",loss)
     optimizer = torch.optim.Adam(net.parameters(), lr=1e-3)
-    for epoch in range(3):
+    for epoch in range(30):
         optimizer.zero_grad()
         im = net(signal, im)
         loss = F.mse_loss(signal, net.sample(im.abs()))
@@ -92,14 +92,14 @@ def process():
         optimizer.step()
         print(f"Epoch {epoch+1}, Loss: {loss.item()}")
         
-    # im=im.permute(0,2,3,1).abs()    
-    # min_im=im.min()
-    # max_im=im.max()
-    # im=(im-min_im)/(max_im-min_im)*255
-    # print("im",mesage_range(im))
-    # im=im.detach().numpy().astype(np.uint8)
-    # # TODO: to be training
-    # imsave('reconstructed.jpg', im)
+    im=im.permute(0,2,3,1).abs()    
+    min_im=im.min()
+    max_im=im.max()
+    im=(im-min_im)/(max_im-min_im)*255
+    print("im",mesage_range(im))
+    im=im.detach().numpy().astype(np.uint8)
+    # TODO: to be training
+    imsave('reconstructed.jpg', im)
     
 
 def test_sample():    
