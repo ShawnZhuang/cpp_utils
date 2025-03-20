@@ -2,6 +2,36 @@ import torch
 import pywt
 import numpy as np
 import inspect
+from torch.autograd import Function
+class DWTFunction(Function):
+    @staticmethod
+    def forward(ctx, x:torch.Tensor, wavelet):
+        ctx.wavelet = wavelet
+        ctx.param = np.sqrt(x.numel())
+        cA, (cH, cV, cD) = pywt.dwt2(x.detach().numpy(), wavelet)
+        return torch.Tensor(np.array([cA, cH, cV, cD]))
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        cA, cH, cV, cD = grad_output
+        coeffs = [cA.numpy(), (cH.numpy(), cV.numpy(), cD.numpy())]
+        x_reconstructed = pywt.idwt2(coeffs, ctx.wavelet)/ctx.param
+        return torch.Tensor(x_reconstructed), None
+
+class IDWTFunction(Function):
+    @staticmethod
+    def forward(ctx, coeffs, wavelet):
+        ctx.wavelet = wavelet
+        ctx.param = np.sqrt(coeffs.numel())
+        cA, cH, cV, cD = coeffs
+        x_reconstructed = pywt.idwt2((cA.detach().numpy(), (cH.detach().numpy(), cV.detach().numpy(), cD.detach().numpy())), wavelet)
+        return torch.Tensor(x_reconstructed)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        x = grad_output
+        cA, (cH, cV, cD) = pywt.dwt2(x.detach().numpy(), ctx.wavelet)
+        return torch.Tensor((cA, cH, cV, cD)),None
 class DWT(torch.nn.Module):
     def __init__(self, wavelet='haar'):
         super(DWT, self).__init__()
@@ -10,25 +40,27 @@ class DWT(torch.nn.Module):
     def forward(self, x: torch.Tensor):        
         # return pywt.dwt(x.detach().numpy(), self.wavelet)
         # return pywt.dwt2(x.detach().numpy(), self.wavelet)
-        cA, (cH, cV, cD)= pywt.dwt2(x.detach().numpy(), self.wavelet)
-        return torch.Tensor(np.array([cA, cH, cV, cD]))
+        # cA, (cH, cV, cD)= pywt.dwt2(x.detach().numpy(), self.wavelet)
+        # return torch.Tensor(np.array([cA, cH, cV, cD]))
+        return DWTFunction.apply(x, self.wavelet)
 
 class IDWT(torch.nn.Module):
     def __init__(self, wavelet='haar'):
         super(IDWT, self).__init__()
         self.wavelet = wavelet
     def forward(self, x: torch.Tensor):
-        cA, cH, cV, cD = x.detach().numpy()
-        coeffs=[cA, (cH, cV, cD)]
-        # return pywt.idwtn(x.detach().numpy(), self.wavelet)
-        return  torch.Tensor(pywt.idwt2(coeffs, self.wavelet))
+        return IDWTFunction.apply(x,self.wavelet)
+        # cA, cH, cV, cD = x.detach().numpy()
+        # coeffs=[cA, (cH, cV, cD)]
+        # # return pywt.idwtn(x.detach().numpy(), self.wavelet)
+        # return  torch.Tensor(pywt.idwt2(coeffs, self.wavelet))
     
 
 class Shrink(torch.nn.Module):
     def __init__(self, threshold):
         super(Shrink, self).__init__()
         self.threshold = threshold
-    def forward(self, x):
+    def forward(self, x:torch.Tensor)->torch.Tensor:
         return torch.sign(x)* torch.relu(torch.abs(x)-self.threshold)
 
 class Sample(torch.nn.Module):
