@@ -31,7 +31,7 @@ class IDWTFunction(Function):
     def backward(ctx, grad_output):
         x = grad_output
         cA, (cH, cV, cD) = pywt.dwt2(x.detach().numpy(), ctx.wavelet)
-        return torch.Tensor((cA, cH, cV, cD)),None
+        return torch.Tensor(np.array ((cA, cH, cV, cD))),None
 class DWT(torch.nn.Module):
     def __init__(self, wavelet='haar'):
         super(DWT, self).__init__()
@@ -56,12 +56,12 @@ class IDWT(torch.nn.Module):
         # return  torch.Tensor(pywt.idwt2(coeffs, self.wavelet))
     
 
-class Shrink(torch.nn.Module):
-    def __init__(self, threshold):
-        super(Shrink, self).__init__()
-        self.threshold = threshold
-    def forward(self, x:torch.Tensor)->torch.Tensor:
-        return torch.sign(x)* torch.relu(torch.abs(x)-self.threshold)
+# class Shrink(torch.nn.Module):
+#     def __init__(self, threshold):
+#         super(Shrink, self).__init__()
+#         self.threshold = threshold
+#     def forward(self, x:torch.Tensor)->torch.Tensor:
+#         return torch.sign(x)* torch.relu(torch.abs(x)-self.threshold)
 
 class Sample(torch.nn.Module):
     # NCHW

@@ -40,7 +40,7 @@ class SUnit(nn.Module):
         self.sample_t=cop.SampleTranpose(self.sample)
         self.dwt=cop.DWT()
         self.idwt=cop.IDWT()
-        self.shrink=cop.Shrink(1/beta)    
+        self.shrink=torch.nn.Softshrink(1/beta)    
         
     def forward(self, s, image):
         # print(mesage_range(image), mesage_range(v), mesage_range(alpha))

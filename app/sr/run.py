@@ -25,7 +25,7 @@ sr_model=model.SRModel((512,512))
 
 optimizer = torch.optim.Adam(sr_model.parameters(), lr=0.001)
 optimizer.zero_grad()
-for epoch in range(10):
+for epoch in range(4):
     pre,x=sr_model(sp)
     loss = F.mse_loss(x, pre)    
     loss.backward()

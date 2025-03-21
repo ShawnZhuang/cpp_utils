@@ -17,7 +17,7 @@ class SuperResolve(torch.nn.Module):
         self._wave.append((cop.DWT("db3"),cop.IDWT("db3")))
         self._wave.append((cop.DWT("db4"),cop.IDWT("db4")))
         self._wave.append((cop.DWT("db5"),cop.IDWT("db5")))       
-        self._shrink=cop.Shrink(1/p_beta)
+        self._shrink= torch.nn.Softshrink(1/p_beta)
         self.weight_params=torch.nn.Parameter(torch.rand((len(self._wave),1)))
 
         
@@ -47,11 +47,13 @@ class SRModel(torch.nn.Module):
         super(SRModel, self).__init__()
         self.new_shape=new_shape
         self.sr= SuperResolve(p_lambda=0.3, p_beta=0.6)
+        self.softmax=torch.nn.Softmax(-1)
     def forward(self,s):
         x = F.interpolate(s, size=self.new_shape)
         for i in range(5):
             pre=x
             x = self.sr(x)
+            # x= self.softmax(x)
         return pre, x
 
 # def model(s: torch.Tensor, new_shape=(512, 512))->torch.Tensor:
