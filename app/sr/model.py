@@ -34,10 +34,10 @@ class SuperResolve(torch.nn.Module):
         for pair in self._wave:
             delta_xs.append(self.wave_delta( x, pair[0], pair[1]))
         delta_xs = torch.stack(delta_xs, dim=-1)
-        print(delta_xs.size())            
-        print(normal_weight_params.size())            
+        # print(delta_xs.size())            
+        # print(normal_weight_params.size())            
         delta=torch.matmul(delta_xs,normal_weight_params)   
-        print(delta.size())            
+        # print(delta.size())            
         x= x+delta.reshape(x.size())
         return x
 
@@ -51,10 +51,10 @@ class SRModel(torch.nn.Module):
     def forward(self,s):
         x = F.interpolate(s, size=self.new_shape)
         for i in range(5):
-            pre=x
+            # pre=x
             x = self.sr(x)
             # x= self.softmax(x)
-        return pre, x
+        return x
 
 # def model(s: torch.Tensor, new_shape=(512, 512))->torch.Tensor:
     

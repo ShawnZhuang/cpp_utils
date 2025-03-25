@@ -12,6 +12,7 @@ import torch.nn.functional as F
 im=data.chelsea()# shape (300,451,3)
 im=data_util.sample_data(im, (512,512))
 print(im.shape)
+im_ori= torch.Tensor(im).permute(0,3,1,2)
 s=data_util.sample_data(im, (128,128))
 
 sp=torch.Tensor(s)
@@ -25,9 +26,9 @@ sr_model=model.SRModel((512,512))
 
 optimizer = torch.optim.Adam(sr_model.parameters(), lr=0.001)
 optimizer.zero_grad()
-for epoch in range(4):
-    pre,x=sr_model(sp)
-    loss = F.mse_loss(x, pre)    
+for epoch in range(20):
+    x=sr_model(sp)
+    loss = F.mse_loss(x, im_ori)    
     loss.backward()
     optimizer.step()
     print(loss)
