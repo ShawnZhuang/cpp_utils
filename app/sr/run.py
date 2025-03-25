@@ -13,6 +13,8 @@ im=data.chelsea()# shape (300,451,3)
 im=data_util.sample_data(im, (512,512))
 print(im.shape)
 im_ori= torch.Tensor(im).permute(0,3,1,2)
+im_ori_fp=(im_ori-im_ori.min()) /(im_ori.max()-im_ori.min())
+
 s=data_util.sample_data(im, (128,128))
 
 sp=torch.Tensor(s)
@@ -26,12 +28,13 @@ sr_model=model.SRModel((512,512))
 
 optimizer = torch.optim.Adam(sr_model.parameters(), lr=0.001)
 optimizer.zero_grad()
-for epoch in range(20):
-    x=sr_model(sp)
-    loss = F.mse_loss(x, im_ori)    
+for epoch in range(10):
+    x=sr_model(sp)   
+    x=(x-x.min())/(x.max()-x.min())
+    loss = F.mse_loss(x, im_ori_fp)
     loss.backward()
     optimizer.step()
-    print(loss)
+    print("ori=", im_ori_fp.min(),im_ori_fp.max(),"rec",x.min(),x.max() ,loss)
 # torch.onnx.export(
 #     sr_model,
 #     sp,

@@ -7,31 +7,31 @@ class DWTFunction(Function):
     @staticmethod
     def forward(ctx, x:torch.Tensor, wavelet):
         ctx.wavelet = wavelet
-        ctx.param = np.sqrt(x.numel())
+        # ctx.param = np.sqrt(x.numel())
         cA, (cH, cV, cD) = pywt.dwt2(x.detach().numpy(), wavelet)
-        return torch.Tensor(np.array([cA, cH, cV, cD]))
+        return torch.Tensor(np.array([cA, cH, cV, cD]) )
 
     @staticmethod
     def backward(ctx, grad_output):
         cA, cH, cV, cD = grad_output
         coeffs = [cA.numpy(), (cH.numpy(), cV.numpy(), cD.numpy())]
-        x_reconstructed = pywt.idwt2(coeffs, ctx.wavelet)/ctx.param
+        x_reconstructed = pywt.idwt2(coeffs, ctx.wavelet) 
         return torch.Tensor(x_reconstructed), None
 
 class IDWTFunction(Function):
     @staticmethod
     def forward(ctx, coeffs, wavelet):
         ctx.wavelet = wavelet
-        ctx.param = np.sqrt(coeffs.numel())
+        # ctx.param = np.sqrt(coeffs.numel())
         cA, cH, cV, cD = coeffs
-        x_reconstructed = pywt.idwt2((cA.detach().numpy(), (cH.detach().numpy(), cV.detach().numpy(), cD.detach().numpy())), wavelet)
+        x_reconstructed = pywt.idwt2((cA.detach().numpy(), (cH.detach().numpy(), cV.detach().numpy(), cD.detach().numpy())), wavelet) 
         return torch.Tensor(x_reconstructed)
 
     @staticmethod
     def backward(ctx, grad_output):
         x = grad_output
         cA, (cH, cV, cD) = pywt.dwt2(x.detach().numpy(), ctx.wavelet)
-        return torch.Tensor(np.array ((cA, cH, cV, cD))),None
+        return torch.Tensor(np.array ((cA, cH, cV, cD)) ),None
 class DWT(torch.nn.Module):
     def __init__(self, wavelet='haar'):
         super(DWT, self).__init__()
